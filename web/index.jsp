@@ -13,11 +13,7 @@
   <body>
   <b>Main menu</b>
   <div>
-    <a href="test">Greetings</a>
-    <br>
-    <a href="getPersons">go to persons table</a>
-    <br>
-    <a href="getPayments">go to payments table</a>
+    <a href="test">Start</a>
   </div>
   </body>
 </html>
