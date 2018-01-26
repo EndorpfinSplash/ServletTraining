@@ -1,5 +1,6 @@
 package by.zinovich.javastudy.api.domain;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Payment {
@@ -10,6 +11,8 @@ public class Payment {
     private String description;
     private Integer paymentId;
     private String personId;
+
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYY-MM-DD HH:mm:ss");
 
 
     public Payment(Integer groupOfPaymentId, Integer cost, String description, String personId) {
@@ -88,7 +91,7 @@ public class Payment {
         return "Payment{" +
                 "groupOfPaymentId=" + groupOfPaymentId +
                 ", cost=" + cost +
-                ", date=" + date +
+                ", date=" + simpleDateFormat.format(date) +
                 ", description='" + description + '\'' +
                 ", paymentId=" + paymentId +
                 ", personId='" + personId + '\'' +

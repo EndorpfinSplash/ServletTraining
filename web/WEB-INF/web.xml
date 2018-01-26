@@ -11,6 +11,10 @@
         <servlet-name>ServletPersons</servlet-name>
         <servlet-class>by.zinovich.javastudy.web.ServletPersons</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>ServletPayments</servlet-name>
+        <servlet-class>by.zinovich.javastudy.web.ServletPayments</servlet-class>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>ServletTest</servlet-name>
@@ -20,6 +24,10 @@
     <servlet-mapping>
         <servlet-name>ServletPersons</servlet-name>
         <url-pattern>/getPersons</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ServletPayments</servlet-name>
+        <url-pattern>/getPayments</url-pattern>
     </servlet-mapping>
 
 </web-app>
