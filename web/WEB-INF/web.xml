@@ -5,10 +5,21 @@
          version="3.1">
     <servlet>
         <servlet-name>ServletTest</servlet-name>
-        <servlet-class>by.zinovich.javastudy.ServletTest</servlet-class>
+        <servlet-class>by.zinovich.javastudy.web.ServletTest</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>ServletPersons</servlet-name>
+        <servlet-class>by.zinovich.javastudy.web.ServletPersons</servlet-class>
+    </servlet>
+
     <servlet-mapping>
         <servlet-name>ServletTest</servlet-name>
         <url-pattern>/test</url-pattern>
     </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>ServletPersons</servlet-name>
+        <url-pattern>/getPersons</url-pattern>
+    </servlet-mapping>
+
 </web-app>

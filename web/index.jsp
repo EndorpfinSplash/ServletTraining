@@ -8,10 +8,16 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
   <head>
-    <title>$Title$</title>
+    <title>Home Page</title>
   </head>
   <body>
-  $END$
-  Index
+  <b>Main menu</b>
+  <div>
+    <a href="test">Greetings</a>
+    <br>
+    <a href="getPersons">go to persons table</a>
+    <br>
+    <a href="getPayments">go to payments table</a>
+  </div>
   </body>
 </html>

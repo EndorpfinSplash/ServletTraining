@@ -1,4 +1,4 @@
-package by.zinovich.javastudy;
+package by.zinovich.javastudy.web;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -8,10 +8,12 @@ import java.io.IOException;
 
 public class ServletTest extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("text/html");
         response.getWriter().write("Hello world!");
+        response.getWriter().write("<div><a href=\"\\ \">Go to main menu</a>");
+
     }
 }
