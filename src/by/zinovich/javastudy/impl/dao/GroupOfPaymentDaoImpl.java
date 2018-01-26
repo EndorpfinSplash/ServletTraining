@@ -27,7 +27,7 @@ public class GroupOfPaymentDaoImpl implements GroupOfPaymentDAO {
     private static final String DELETE_GROUP_OF_PAYMENT =
             "DELETE FROM Group_Of_Payments WHERE id=?";
 
-    private static final DateFormat df = new SimpleDateFormat("YYYY-MM-DD HH:mm:ss");
+    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private Connection connection;
     private PreparedStatement selectAllGroupsStmt;

@@ -15,7 +15,8 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 
 public class ServletPayments extends HttpServlet {
-    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("YYYY-MM-DD HH:mm:ss");
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
     }

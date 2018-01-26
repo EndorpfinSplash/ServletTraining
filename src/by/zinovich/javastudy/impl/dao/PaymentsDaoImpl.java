@@ -17,7 +17,7 @@ import java.util.List;
 
 public class PaymentsDaoImpl implements PaymentsDAO {
 
-    private static final DateFormat df = new SimpleDateFormat("YYYY-MM-DD HH:mm:ss");
+    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private PreparedStatement selectAllStmt;
     private PreparedStatement selectPaymentsForPersonStmt;

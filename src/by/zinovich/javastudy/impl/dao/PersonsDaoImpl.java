@@ -26,8 +26,6 @@ public class PersonsDaoImpl implements PersonsDAO {
     private static final String DELETE_PERSON =
             "DELETE FROM Persons WHERE Person_id=?";
 
-    private static final DateFormat df = new SimpleDateFormat("YYYY-MM-DD HH:mm:ss");
-
     private Connection connection;
     private PreparedStatement selectAllPersonsStmt;
     private PreparedStatement selectAllGroupsForPersonStmt;
