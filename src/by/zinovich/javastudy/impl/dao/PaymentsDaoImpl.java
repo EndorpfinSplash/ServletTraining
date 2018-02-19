@@ -3,7 +3,6 @@ package by.zinovich.javastudy.impl.dao;
 import by.zinovich.javastudy.api.dao.PaymentsDAO;
 import by.zinovich.javastudy.api.domain.Payment;
 import by.zinovich.javastudy.exceptions.DaoException;
-import by.zinovich.javastudy.utils.CloseResultSet;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

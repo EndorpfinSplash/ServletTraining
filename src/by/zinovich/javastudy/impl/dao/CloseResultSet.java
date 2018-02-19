@@ -1,4 +1,4 @@
-package by.zinovich.javastudy.utils;
+package by.zinovich.javastudy.impl.dao;
 
 import by.zinovich.javastudy.exceptions.DaoException;
 
