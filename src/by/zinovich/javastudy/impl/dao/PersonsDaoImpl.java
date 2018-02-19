@@ -25,6 +25,8 @@ public class PersonsDaoImpl implements PersonsDAO {
             "UPDATE Persons SET Person_name_first=?, Person_name_first=?, Login=?, password = ? where person_id=?";
     private static final String DELETE_PERSON =
             "DELETE FROM Persons WHERE Person_id=?";
+    private static final String COUNT_PERSONS_RECORDS =
+            "SELECT COUNT(*) FROM Persons WHERE Person_id=?";
 
     private Connection connection;
     private PreparedStatement selectAllPersonsStmt;
@@ -32,9 +34,10 @@ public class PersonsDaoImpl implements PersonsDAO {
     private PreparedStatement insertPersonStmt;
     private PreparedStatement deletePersonStmt;
     private PreparedStatement updatePersonStmt;
+    private PreparedStatement countPersonasRecStmt;
 
     List<PreparedStatement> preparedStatementList = new ArrayList<>(Arrays.asList(
-            selectAllPersonsStmt, selectAllGroupsForPersonStmt, insertPersonStmt, deletePersonStmt, updatePersonStmt)
+            selectAllPersonsStmt, selectAllGroupsForPersonStmt, insertPersonStmt, deletePersonStmt, updatePersonStmt, countPersonasRecStmt)
     );
 
     public PersonsDaoImpl(Connection connection) throws DaoException {
@@ -77,7 +80,7 @@ public class PersonsDaoImpl implements PersonsDAO {
             if (this.insertPersonStmt == null) {
                 this.insertPersonStmt = this.connection.prepareStatement(INSERT_PERSON);
             }
-            this.insertPersonStmt.setString(1, person.getPersonNameFirst());
+            resultSet = this.insertPersonStmt.getGeneratedKeys();
             this.insertPersonStmt.setString(1, person.getPersonNameFirst());
             this.insertPersonStmt.setString(2, person.getPersonNameSecond());
             this.insertPersonStmt.setString(3, person.getPersonLogin());
@@ -119,7 +122,25 @@ public class PersonsDaoImpl implements PersonsDAO {
             this.deletePersonStmt.setInt(1, id);
             this.deletePersonStmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DaoException("Deleting group of payment failed.", e);
+            throw new DaoException("Deleting person failed.", e);
+        }
+    }
+
+    @Override
+    public int countPersonsRecords(Integer Person_id) throws DaoException {
+        ResultSet rs = null;
+        try {
+            if (this.countPersonasRecStmt == null) {
+                this.countPersonasRecStmt = this.connection.prepareStatement(COUNT_PERSONS_RECORDS);
+            }
+            this.countPersonasRecStmt.setInt(1,Person_id);
+            rs = this.countPersonasRecStmt.executeQuery();
+            return rs.getInt(1);
+
+        } catch (SQLException e) {
+            throw new DaoException("Failed to count person", e);
+        } finally {
+            CloseResultSet.closeResultSet(rs, "persons.");
         }
     }
 
