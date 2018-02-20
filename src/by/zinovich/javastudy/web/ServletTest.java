@@ -24,19 +24,16 @@ public class ServletTest extends HttpServlet {
     }
 
     protected void doRequest(HttpServletRequest req, HttpServletResponse response) throws IOException {
-        Properties logProps = new Properties();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream input = null;
+
         response.setContentType("text/html;charset=utf-8");
         PrintWriter pw = response.getWriter();
         String systemInfo = "";
 
         /// MODEL ///
         try {
+
             // Delete person
             pw.println(createHtmlForDeletePerson());
-            //  pw.println(createHtmlForEditPerson());
-
             Integer userIdForDelete = null;
 
             try {
@@ -66,11 +63,9 @@ public class ServletTest extends HttpServlet {
             pw.println("<p> " + systemInfo + "</p>");
 
             /// Add Person
-
             String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
-            String userSecondNameForAdd = req.getParameter("Second_name_add")== null ? "" : req.getParameter("Second_name_add");
-            String userLoginForAdd = req.getParameter("login_for_add")== null ? "" : req.getParameter("login_for_add");
-
+            String userSecondNameForAdd = req.getParameter("Second_name_add") == null ? "" : req.getParameter("Second_name_add");
+            String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
 
             if ((userFirstNameForAdd != null && !"".equals(userFirstNameForAdd)) &&
                     (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
@@ -93,21 +88,28 @@ public class ServletTest extends HttpServlet {
 
         } catch (Exception e) {
             pw.println("<p> Произошла ошибка. Дополнительные сведения в log-файле.</p>");
-            input = classLoader.getResourceAsStream("Logging.properties");
-            logProps.load(input);
-            File log = new File(logProps.getProperty("LogFile"));
-            try (FileWriter logWriter = new FileWriter(log, true)) {
-                for (StackTraceElement element : e.getStackTrace()) {
-                    logWriter.write(element.toString() + '\n');
-                }
-                logWriter.flush();
+            logError(e);
+        } finally {
+            if (pw != null) {
+                pw.close();
             }
+        }
+    }
+
+    private void logError(Exception e) throws IOException {
+        Properties logProps = new Properties();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        InputStream input = classLoader.getResourceAsStream("Logging.properties");
+        logProps.load(input);
+        File log = new File(logProps.getProperty("LogFile"));
+        try (FileWriter logWriter = new FileWriter(log, true)) {
+            for (StackTraceElement element : e.getStackTrace()) {
+                logWriter.write(element.toString() + '\n');
+            }
+            logWriter.flush();
         } finally {
             if (input != null) {
                 input.close();
-            }
-            if (pw != null) {
-                pw.close();
             }
         }
     }
