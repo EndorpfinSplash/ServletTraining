@@ -2,7 +2,9 @@ package by.zinovich.javastudy.web;
 
 import by.zinovich.javastudy.api.dao.PersonsDAO;
 import by.zinovich.javastudy.api.domain.Person;
+import by.zinovich.javastudy.exceptions.DaoException;
 import by.zinovich.javastudy.impl.dao.DaoFactoryImpl;
+import com.sun.javafx.iio.ios.IosDescriptor;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -27,61 +29,22 @@ public class ServletTest extends HttpServlet {
 
         response.setContentType("text/html;charset=utf-8");
         PrintWriter pw = response.getWriter();
-        String systemInfo = "";
 
         /// MODEL ///
         try {
-
+            PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO();
             // Delete person
             pw.println(createHtmlForDeletePerson());
-            Integer userIdForDelete = null;
-
-            try {
-                String userStringId = req.getParameter("user_id_for_deleting");
-                if (userStringId != null && !"".equals(userStringId)) {
-                    userIdForDelete = Integer.parseInt(userStringId);
-                }
-            } catch (NumberFormatException e) {
-                systemInfo = " Чтобы удалить пользователя, необходимо ввести его номер user_id";
-            }
-
-            PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO();
-            if (userIdForDelete != null) {
-                int countRecForDelPersonId = personsDAO.countPersonsRecords(userIdForDelete);
-
-                if (countRecForDelPersonId == 1) {
-                    personsDAO.deletePerson(userIdForDelete);
-                    systemInfo = (" Пользователь с user_id = " + userIdForDelete + " удален.");
-                } else {
-                    systemInfo = "Пользователя с user_id = " + userIdForDelete + " нет в таблице.";
-                }
-            }
-
-            if ("".equals(userIdForDelete)) {
-                systemInfo = "Чтобы удалить пользователя, необходимо ввести его user_id </p>";
-            }
-            pw.println("<p> " + systemInfo + "</p>");
+            String userStringId = req.getParameter("user_id_for_deleting") == null ? "" : req.getParameter("user_id_for_deleting");
+            pw.println("<p> " + deletePerson(userStringId, personsDAO) + "</p>");
 
             /// Add Person
             String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
             String userSecondNameForAdd = req.getParameter("Second_name_add") == null ? "" : req.getParameter("Second_name_add");
             String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
 
-            if ((userFirstNameForAdd != null && !"".equals(userFirstNameForAdd)) &&
-                    (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
-                    (userLoginForAdd != null && !"".equals(userLoginForAdd))
-                    ) {
-                personsDAO.addPerson(new Person(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
-                systemInfo = "Новый пользователь добавлен";
-                userFirstNameForAdd = "";
-                userSecondNameForAdd = "";
-                userLoginForAdd = "";
-
-            } else {
-                systemInfo = "Все поля должны быть заполнены!";
-            }
             pw.println(createHtmlForAddPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
-            pw.println("<p> " + systemInfo + "</p>");
+            pw.println("<p> " + addPerson(userFirstNameForAdd,userSecondNameForAdd,userLoginForAdd,personsDAO) + "</p>");
 
             /// Show all Persons
             pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
@@ -96,18 +59,78 @@ public class ServletTest extends HttpServlet {
         }
     }
 
+    private String deletePerson(String userStringId, PersonsDAO personsDAO) {
+        String result;
+        try {
+
+            Integer userIdForDelete = Integer.parseInt(userStringId);
+
+            int countRecForDelPersonId = personsDAO.countPersonsRecords(userIdForDelete);
+
+            if (countRecForDelPersonId == 1) {
+                personsDAO.deletePerson(userIdForDelete);
+                result = ("Пользователь с user_id = " + userIdForDelete + " удален.");
+            } else {
+                result = "Пользователя с user_id = " + userIdForDelete + " нет в таблице.";
+            }
+
+        } catch (NumberFormatException e) {
+            result = " Чтобы удалить пользователя, необходимо ввести его номер user_id";
+        } catch (DaoException e) {
+            result = "При попытке обращения к данным о пользователях произошел сбой. ";
+            try {
+                logError(e);
+            } catch (IOException e1) {
+                result += "При попытке записать сведения об ошибке произошел сбой.";
+            }
+        }
+        return result;
+    }
+
+    private String addPerson(String userFirstNameForAdd, String userSecondNameForAdd, String userLoginForAdd, PersonsDAO personsDAO){
+        String result;
+        if ((userFirstNameForAdd != null && !"".equals(userFirstNameForAdd)) &&
+                (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
+                (userLoginForAdd != null && !"".equals(userLoginForAdd))
+                ) {
+
+            try {
+                personsDAO.addPerson(new Person(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
+            } catch (DaoException e) {
+                result = "При попытке добавления пользователя произошел сбой.";
+                try {
+                    logError(e);
+                } catch (IOException e1) {
+                    result += "При попытке записать сведения об ошибке произошел сбой.";
+                    return result;
+                }
+            }
+            result = "Новый пользователь добавлен";
+
+        } else {
+            result = "Все поля должны быть заполнены!";
+        }
+        return result;
+    }
+
     private void logError(Exception e) throws IOException {
         Properties logProps = new Properties();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         InputStream input = classLoader.getResourceAsStream("Logging.properties");
-        logProps.load(input);
-        File log = new File(logProps.getProperty("LogFile"));
-        try (FileWriter logWriter = new FileWriter(log, true)) {
+        FileWriter logWriter = null;
+        try {
+            logProps.load(input);
+
+            File log = new File(logProps.getProperty("LogFile"));
+            logWriter = new FileWriter(log, true);
             for (StackTraceElement element : e.getStackTrace()) {
                 logWriter.write(element.toString() + '\n');
             }
             logWriter.flush();
         } finally {
+            if (logWriter != null) {
+                logWriter.close();
+            }
             if (input != null) {
                 input.close();
             }
