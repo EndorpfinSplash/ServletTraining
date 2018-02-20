@@ -26,13 +26,14 @@ public class ServletTest extends HttpServlet {
     protected void doRequest(HttpServletRequest req, HttpServletResponse response) throws IOException {
         Properties logProps = new Properties();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream input = classLoader.getResourceAsStream("Logging.properties");
-
+        InputStream input = null;
         response.setContentType("text/html;charset=utf-8");
         PrintWriter pw = response.getWriter();
         String systemInfo = "";
 
+        /// MODEL ///
         try {
+            // Delete person
             pw.println(createHtmlForDeletePerson());
             //  pw.println(createHtmlForEditPerson());
 
@@ -48,7 +49,7 @@ public class ServletTest extends HttpServlet {
             }
 
             PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO();
-            if (userIdForDelete != null ) {
+            if (userIdForDelete != null) {
                 int countRecForDelPersonId = personsDAO.countPersonsRecords(userIdForDelete);
 
                 if (countRecForDelPersonId == 1) {
@@ -63,11 +64,36 @@ public class ServletTest extends HttpServlet {
                 systemInfo = "Чтобы удалить пользователя, необходимо ввести его user_id </p>";
             }
             pw.println("<p> " + systemInfo + "</p>");
+
+            /// Add Person
+
+            String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
+            String userSecondNameForAdd = req.getParameter("Second_name_add")== null ? "" : req.getParameter("Second_name_add");
+            String userLoginForAdd = req.getParameter("login_for_add")== null ? "" : req.getParameter("login_for_add");
+
+
+            if ((userFirstNameForAdd != null && !"".equals(userFirstNameForAdd)) &&
+                    (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
+                    (userLoginForAdd != null && !"".equals(userLoginForAdd))
+                    ) {
+                personsDAO.addPerson(new Person(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
+                systemInfo = "Новый пользователь добавлен";
+                userFirstNameForAdd = "";
+                userSecondNameForAdd = "";
+                userLoginForAdd = "";
+
+            } else {
+                systemInfo = "Все поля должны быть заполнены!";
+            }
+            pw.println(createHtmlForAddPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
+            pw.println("<p> " + systemInfo + "</p>");
+
+            /// Show all Persons
             pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
 
         } catch (Exception e) {
             pw.println("<p> Произошла ошибка. Дополнительные сведения в log-файле.</p>");
-
+            input = classLoader.getResourceAsStream("Logging.properties");
             logProps.load(input);
             File log = new File(logProps.getProperty("LogFile"));
             try (FileWriter logWriter = new FileWriter(log, true)) {
@@ -75,14 +101,18 @@ public class ServletTest extends HttpServlet {
                     logWriter.write(element.toString() + '\n');
                 }
                 logWriter.flush();
-            } finally {
-                if (pw != null) {
-                    pw.close();
-                }
+            }
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (pw != null) {
+                pw.close();
             }
         }
     }
 
+    /// VIEW ///
     private StringBuffer createHtmlTableOfPersonsList(List<Person> list) {
         StringBuffer personsHtmlTable = new StringBuffer("<br> <B> List of Persons </B>" +
                 "<table border=5>" +
@@ -103,8 +133,19 @@ public class ServletTest extends HttpServlet {
 
     private String createHtmlForDeletePerson() {
         return "<form action=\"test\" method=\"GET\">" +
-                "<p>Введите user_id пользователя, которого необходимо удалить: <input type=\"text\" name=\"user_id_for_deleting\">" +
+                "<p>Введите user_id пользователя, которого необходимо удалить: " +
+                "<input type=\"text\" name=\"user_id_for_deleting\">" +
                 "<input type=\"submit\" value=\"Удалить\" /> </p>" +
+                "</form>";
+    }
+
+    private String createHtmlForAddPerson(String firstName, String secondName, String login) {
+        return "<form action=\"test\" method=\"GET\">" +
+                "<p>Чтобы добавить пользователя укажите все необходимые данные: <br> " +
+                "Firt_name:___<input type=\"text\" name=\"Firt_name_add\" value=\"" + firstName + "\"> <br>" +
+                "Second_name:_<input type=\"text\" name=\"Second_name_add\" value=\"" + secondName + "\"> <br>" +
+                "Login:_______<input type=\"text\" name=\"login_for_add\" value=\"" + login + "\"> <br>" +
+                "<input type=\"submit\" value=\"Добавить\" /><br> </p>" +
                 "</form>";
     }
 
