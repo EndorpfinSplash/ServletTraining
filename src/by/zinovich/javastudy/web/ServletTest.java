@@ -3,6 +3,7 @@ package by.zinovich.javastudy.web;
 import by.zinovich.javastudy.api.dao.PersonsDAO;
 import by.zinovich.javastudy.api.domain.Person;
 import by.zinovich.javastudy.exceptions.DaoException;
+import by.zinovich.javastudy.exceptions.MyServletException;
 import by.zinovich.javastudy.impl.dao.DaoFactoryImpl;
 import com.sun.javafx.iio.ios.IosDescriptor;
 
@@ -33,10 +34,9 @@ public class ServletTest extends HttpServlet {
         /// MODEL ///
         try {
             PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO();
-            // Delete person
-            pw.println(createHtmlForDeletePerson());
-            String userStringId = req.getParameter("user_id_for_deleting") == null ? "" : req.getParameter("user_id_for_deleting");
-            pw.println("<p> " + deletePerson(userStringId, personsDAO) + "</p>");
+
+            /// Show all Persons
+            pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
 
             /// Add Person
             String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
@@ -44,10 +44,23 @@ public class ServletTest extends HttpServlet {
             String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
 
             pw.println(createHtmlForAddPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
-            pw.println("<p> " + addPerson(userFirstNameForAdd,userSecondNameForAdd,userLoginForAdd,personsDAO) + "</p>");
+            try {
+                addPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd, personsDAO);
+                pw.println("<p> Новый пользователь добавлен.</p>");
+            } catch (MyServletException e) {
+                pw.println("<p> " + e.getMessage() + "</p>");
+            }
 
-            /// Show all Persons
-            pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
+            // Delete person
+            pw.println(createHtmlForDeletePerson());
+            String userStringId = req.getParameter("user_id_for_deleting") == null ? "" : req.getParameter("user_id_for_deleting");
+
+            try {
+                deletePerson(userStringId, personsDAO);
+                pw.println("<p> Пользователь с user_id = " + userStringId + " удален.</p>");
+            } catch (MyServletException e) {
+                pw.println("<p>" + e.getMessage() + "</p>");
+            }
 
         } catch (Exception e) {
             pw.println("<p> Произошла ошибка. Дополнительные сведения в log-файле.</p>");
@@ -59,36 +72,37 @@ public class ServletTest extends HttpServlet {
         }
     }
 
-    private String deletePerson(String userStringId, PersonsDAO personsDAO) {
-        String result;
+    private void deletePerson(String userStringId, PersonsDAO personsDAO) throws MyServletException {
         try {
-
             Integer userIdForDelete = Integer.parseInt(userStringId);
-
+            // считаем кол-во записей с удаляемой id
             int countRecForDelPersonId = personsDAO.countPersonsRecords(userIdForDelete);
 
+            // если запись одна, то удаляем пользователя (он может быть тольлко 1 т.к. user_id уникальные значения содержит)
             if (countRecForDelPersonId == 1) {
                 personsDAO.deletePerson(userIdForDelete);
-                result = ("Пользователь с user_id = " + userIdForDelete + " удален.");
             } else {
-                result = "Пользователя с user_id = " + userIdForDelete + " нет в таблице.";
+                // во всех остальных случаях пользователя нет
+                throw new MyServletException("Пользователя с user_id = " + userIdForDelete + " нет в таблице.");
             }
 
         } catch (NumberFormatException e) {
-            result = " Чтобы удалить пользователя, необходимо ввести его номер user_id";
+            // на случай если введено не числовое значение
+            throw new MyServletException(" Чтобы удалить пользователя, необходимо ввести его номер user_id");
         } catch (DaoException e) {
-            result = "При попытке обращения к данным о пользователях произошел сбой. ";
+            String exceptionMsg = "При попытке обращения к данным о пользователях произошел сбой.";
             try {
                 logError(e);
             } catch (IOException e1) {
-                result += "При попытке записать сведения об ошибке произошел сбой.";
+                // добавляем сбой логирования, если он был
+                exceptionMsg += "\n При попытке записать сведения об этой ошибке произошел сбой.";
             }
+            // сбой при обращении к данным
+            throw new MyServletException(exceptionMsg);
         }
-        return result;
     }
 
-    private String addPerson(String userFirstNameForAdd, String userSecondNameForAdd, String userLoginForAdd, PersonsDAO personsDAO){
-        String result;
+    private void addPerson(String userFirstNameForAdd, String userSecondNameForAdd, String userLoginForAdd, PersonsDAO personsDAO) throws MyServletException {
         if ((userFirstNameForAdd != null && !"".equals(userFirstNameForAdd)) &&
                 (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
                 (userLoginForAdd != null && !"".equals(userLoginForAdd))
@@ -97,20 +111,17 @@ public class ServletTest extends HttpServlet {
             try {
                 personsDAO.addPerson(new Person(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
             } catch (DaoException e) {
-                result = "При попытке добавления пользователя произошел сбой.";
+                String exceptionMsg =  "При попытке добавления пользователя произошел сбой.";
                 try {
                     logError(e);
                 } catch (IOException e1) {
-                    result += "При попытке записать сведения об ошибке произошел сбой.";
-                    return result;
+                    exceptionMsg += "При попытке записать сведения об ошибке произошел сбой.";
                 }
+                throw new MyServletException(exceptionMsg);
             }
-            result = "Новый пользователь добавлен";
-
         } else {
-            result = "Все поля должны быть заполнены!";
+            throw new MyServletException( "Все поля должны быть заполнены!");
         }
-        return result;
     }
 
     private void logError(Exception e) throws IOException {
