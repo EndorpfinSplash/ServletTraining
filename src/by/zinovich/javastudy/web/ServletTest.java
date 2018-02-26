@@ -32,35 +32,47 @@ public class ServletTest extends HttpServlet {
         PrintWriter pw = response.getWriter();
 
         /// MODEL ///
-        try {
-            PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO();
+        try (PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO()) {
+
+            // Delete button push handler
+            String usrIdForDelByButtonStr = req.getParameter("usr_id_for_del_by_btn");
+            if (usrIdForDelByButtonStr != null) {
+                try {
+                    deletePerson(usrIdForDelByButtonStr, personsDAO);
+                    pw.println("<p> Пользователь с user_id = " + usrIdForDelByButtonStr + " удален.</p>");
+                } catch (MyServletException e) {
+                    pw.println("<p>" + e.getMessage() + "</p>");
+                }
+            }
+
+            // Add new user button push handler
+            String addNewUserButtonPushed = req.getParameter("Add_person_button_push");
+            if (addNewUserButtonPushed != null) {
+                String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
+                String userSecondNameForAdd = req.getParameter("Second_name_add") == null ? "" : req.getParameter("Second_name_add");
+                String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
+                try {
+                    addPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd, personsDAO);
+                    pw.println("<p> Новый пользователь добавлен.</p>");
+                } catch (MyServletException e) {
+                    pw.println(createHtmlForAddPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
+                    pw.println("<p> " + e.getMessage() + "</p>");
+                    return;
+                }
+            }
+
+            // Go to add new person button push handler
+            String addNewUserMenuButton = req.getParameter("Add_new_user_menu");
+            if (addNewUserMenuButton != null) {
+                /// Add Person
+                pw.println(createHtmlForAddPerson("", "", ""));
+                return;
+            }
+            // Add new user button html
+            pw.println(createHtmlForAddPersonButton());
 
             /// Show all Persons
             pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
-
-            /// Add Person
-            String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
-            String userSecondNameForAdd = req.getParameter("Second_name_add") == null ? "" : req.getParameter("Second_name_add");
-            String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
-
-            pw.println(createHtmlForAddPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
-            try {
-                addPerson(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd, personsDAO);
-                pw.println("<p> Новый пользователь добавлен.</p>");
-            } catch (MyServletException e) {
-                pw.println("<p> " + e.getMessage() + "</p>");
-            }
-
-            // Delete person
-            pw.println(createHtmlForDeletePerson());
-            String userStringId = req.getParameter("user_id_for_deleting") == null ? "" : req.getParameter("user_id_for_deleting");
-
-            try {
-                deletePerson(userStringId, personsDAO);
-                pw.println("<p> Пользователь с user_id = " + userStringId + " удален.</p>");
-            } catch (MyServletException e) {
-                pw.println("<p>" + e.getMessage() + "</p>");
-            }
 
         } catch (Exception e) {
             pw.println("<p> Произошла ошибка. Дополнительные сведения в log-файле.</p>");
@@ -75,20 +87,7 @@ public class ServletTest extends HttpServlet {
     private void deletePerson(String userStringId, PersonsDAO personsDAO) throws MyServletException {
         try {
             Integer userIdForDelete = Integer.parseInt(userStringId);
-            // считаем кол-во записей с удаляемой id
-            int countRecForDelPersonId = personsDAO.countPersonsRecords(userIdForDelete);
-
-            // если запись одна, то удаляем пользователя (он может быть тольлко 1 т.к. user_id уникальные значения содержит)
-            if (countRecForDelPersonId == 1) {
-                personsDAO.deletePerson(userIdForDelete);
-            } else {
-                // во всех остальных случаях пользователя нет
-                throw new MyServletException("Пользователя с user_id = " + userIdForDelete + " нет в таблице.");
-            }
-
-        } catch (NumberFormatException e) {
-            // на случай если введено не числовое значение
-            throw new MyServletException(" Чтобы удалить пользователя, необходимо ввести его номер user_id");
+            personsDAO.deletePerson(userIdForDelete);
         } catch (DaoException e) {
             String exceptionMsg = "При попытке обращения к данным о пользователях произошел сбой.";
             try {
@@ -107,11 +106,10 @@ public class ServletTest extends HttpServlet {
                 (userSecondNameForAdd != null && !"".equals(userSecondNameForAdd)) &&
                 (userLoginForAdd != null && !"".equals(userLoginForAdd))
                 ) {
-
             try {
                 personsDAO.addPerson(new Person(userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd));
             } catch (DaoException e) {
-                String exceptionMsg =  "При попытке добавления пользователя произошел сбой.";
+                String exceptionMsg = "При попытке добавления пользователя произошел сбой.";
                 try {
                     logError(e);
                 } catch (IOException e1) {
@@ -120,7 +118,7 @@ public class ServletTest extends HttpServlet {
                 throw new MyServletException(exceptionMsg);
             }
         } else {
-            throw new MyServletException( "Все поля должны быть заполнены!");
+            throw new MyServletException("Все поля должны быть заполнены!");
         }
     }
 
@@ -150,9 +148,9 @@ public class ServletTest extends HttpServlet {
 
     /// VIEW ///
     private StringBuffer createHtmlTableOfPersonsList(List<Person> list) {
-        StringBuffer personsHtmlTable = new StringBuffer("<br> <B> List of Persons </B>" +
+        StringBuffer personsHtmlTable = new StringBuffer("<br> <B> Список пользователей </B>" +
                 "<table border=5>" +
-                "<td><b>Имя<b></td> <td><b>Фамилия<b></td> <td><b>login<b></td> <td><b>password<b></td> <td><b>user_id<b></td>" +
+                "<td><b>Имя<b></td> <td><b>Фамилия<b></td> <td><b>login<b></td> <td><b>password<b></td> <td><b>user_id<b></td> <td><b>Операция<b></td>" +
                 "<tr>");
 
         for (Person p : list) {
@@ -161,18 +159,15 @@ public class ServletTest extends HttpServlet {
                             "<td>" + p.getPersonNameSecond() + "</td>" +
                             "<td>" + p.getPersonLogin() + "</td>" +
                             "<td>" + p.getPersonPassword() + "</td>" +
-                            "<td>" + p.getPersonId() + "</td></tr>");
+                            "<td>" + p.getPersonId() + "</td>" +
+                            "<td><form action=\"test\" method=\"GET\"> <input type=\"hidden\" name=\"usr_id_for_del_by_btn\" value =\"" +
+                            +p.getPersonId() +
+                            "\"> <input type=\"submit\" name=\"submit\" value =\"удалить\" /> </form></td>" +
+
+                            "</tr>");
         }
         personsHtmlTable.append("</table>");
         return personsHtmlTable;
-    }
-
-    private String createHtmlForDeletePerson() {
-        return "<form action=\"test\" method=\"GET\">" +
-                "<p>Введите user_id пользователя, которого необходимо удалить: " +
-                "<input type=\"text\" name=\"user_id_for_deleting\">" +
-                "<input type=\"submit\" value=\"Удалить\" /> </p>" +
-                "</form>";
     }
 
     private String createHtmlForAddPerson(String firstName, String secondName, String login) {
@@ -181,7 +176,19 @@ public class ServletTest extends HttpServlet {
                 "Firt_name:___<input type=\"text\" name=\"Firt_name_add\" value=\"" + firstName + "\"> <br>" +
                 "Second_name:_<input type=\"text\" name=\"Second_name_add\" value=\"" + secondName + "\"> <br>" +
                 "Login:_______<input type=\"text\" name=\"login_for_add\" value=\"" + login + "\"> <br>" +
-                "<input type=\"submit\" value=\"Добавить\" /><br> </p>" +
+                "<input type=\"submit\" name=\"Add_person_button_push\" value=\"Добавить\" /><br> </p>" +
+                "</form>" + createHtmlForMainMenuButton();
+    }
+
+    private String createHtmlForAddPersonButton() {
+        return "<form action=\"test\" method=\"GET\">" +
+                "<input type=\"submit\" name=\"Add_new_user_menu\" value=\"Добавить нового пользователя\" /><br> </p>" +
+                "</form>";
+    }
+
+    private String createHtmlForMainMenuButton() {
+        return "<form action=\"test\" method=\"GET\">" +
+                "<input type=\"submit\" name=\"Go_toMainList\" value = \"Вернуться к списку пользователей\" a href =\"test\" /><br> </p>" +
                 "</form>";
     }
 
