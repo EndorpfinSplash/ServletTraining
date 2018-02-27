@@ -16,10 +16,13 @@ public class PersonsDaoImpl implements PersonsDAO {
 
     private static final String SELECT_ALL_PERSONS =
             "SELECT Person_id, Person_name_first, Person_name_second, Login, password FROM Persons";
+
+    private static final String SELECT_PERSON_BY_ID =
+            "SELECT Person_id, Person_name_first, Person_name_second, Login, password FROM Persons where person_id =?";
     private static final String INSERT_PERSON =
             "INSERT into Persons ( Person_name_first, Person_name_second, Login) VALUES (?,?,?)";
     private static final String UPDATE_PERSON =
-            "UPDATE Persons SET Person_name_first=?, Person_name_first=?, Login=?, password = ? where person_id=?";
+            "UPDATE Persons SET Person_name_first=?, Person_name_second=?, Login=?, password = ? where person_id=?";
     private static final String DELETE_PERSON =
             "DELETE FROM Persons WHERE Person_id=?";
     private static final String COUNT_PERSONS_RECORDS =
@@ -32,9 +35,10 @@ public class PersonsDaoImpl implements PersonsDAO {
     private PreparedStatement deletePersonStmt;
     private PreparedStatement updatePersonStmt;
     private PreparedStatement countPersonasRecStmt;
+    private PreparedStatement selectPersonByIdStmt;
 
     List<PreparedStatement> preparedStatementList = new ArrayList<>(Arrays.asList(
-            selectAllPersonsStmt, selectAllGroupsForPersonStmt, insertPersonStmt, deletePersonStmt, updatePersonStmt, countPersonasRecStmt)
+            selectAllPersonsStmt, selectAllGroupsForPersonStmt, insertPersonStmt, deletePersonStmt, updatePersonStmt, countPersonasRecStmt, selectPersonByIdStmt)
     );
 
     public PersonsDaoImpl(Connection connection) throws DaoException {
@@ -139,6 +143,32 @@ public class PersonsDaoImpl implements PersonsDAO {
         } finally {
             CloseResultSet.closeResultSet(rs, "persons.");
         }
+    }
+
+    @Override
+    public Person getPersonByPersonId(Integer person_id) throws DaoException {
+
+        ResultSet resultSet = null;
+        Person person = new Person();
+        try {
+            if (this.selectPersonByIdStmt == null) {
+                this.selectPersonByIdStmt = this.connection.prepareStatement(SELECT_PERSON_BY_ID);
+        }
+            this.selectPersonByIdStmt.setInt(1, person_id);
+            resultSet = this.selectPersonByIdStmt.executeQuery();
+
+                person.setPersonId(resultSet.getInt("Person_id"));
+                person.setPersonNameFirst(resultSet.getString("Person_name_first"));
+                person.setPersonNameSecond(resultSet.getString("Person_name_second"));
+                person.setPersonLogin(resultSet.getString("Login"));
+                person.setPersonPassword(resultSet.getString("password"));
+
+        } catch (SQLException e) {
+            throw new DaoException("Failed to create statement to select all group payments", e);
+        } finally {
+            CloseResultSet.closeResultSet(resultSet, "persons.");
+        }
+        return person;
     }
 
     @Override

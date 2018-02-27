@@ -33,11 +33,12 @@ public class ServletTest extends HttpServlet {
 
         /// MODEL ///
         try (PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO()) {
+            String action = req.getParameter("action");
 
             // Delete button push handler
-            String usrIdForDelByButtonStr = req.getParameter("usr_id_for_del_by_btn");
-            if (usrIdForDelByButtonStr != null) {
+            if (action != null && action.equals("удалить")) {
                 try {
+                    String usrIdForDelByButtonStr = req.getParameter("user_id");
                     deletePerson(usrIdForDelByButtonStr, personsDAO);
                     pw.println("<p> Пользователь с user_id = " + usrIdForDelByButtonStr + " удален.</p>");
                 } catch (MyServletException e) {
@@ -46,8 +47,7 @@ public class ServletTest extends HttpServlet {
             }
 
             // Add new user button push handler
-            String addNewUserButtonPushed = req.getParameter("Add_person_button_push");
-            if (addNewUserButtonPushed != null) {
+            if (action != null && action.equals("Add_new_Person")) {
                 String userFirstNameForAdd = req.getParameter("Firt_name_add") == null ? "" : req.getParameter("Firt_name_add");
                 String userSecondNameForAdd = req.getParameter("Second_name_add") == null ? "" : req.getParameter("Second_name_add");
                 String userLoginForAdd = req.getParameter("login_for_add") == null ? "" : req.getParameter("login_for_add");
@@ -62,12 +62,32 @@ public class ServletTest extends HttpServlet {
             }
 
             // Go to add new person button push handler
-            String addNewUserMenuButton = req.getParameter("Add_new_user_menu");
-            if (addNewUserMenuButton != null) {
+            if (action != null && action.equals("Go_to_add_Person_form")) {
                 /// Add Person
                 pw.println(createHtmlForAddPerson("", "", ""));
                 return;
             }
+
+            if (action != null && action.equals("редактировать")) {
+                String usrIdForEditStr = req.getParameter("user_id");
+                Integer usrIdForEdit = Integer.parseInt(usrIdForEditStr);
+                Person personForEdit  = personsDAO.getPersonByPersonId(usrIdForEdit);
+                pw.println(createHtmlForEditPerson(personForEdit));
+                return;
+            }
+
+            if (action != null && action.equals("Save_Edited_data")) {
+
+                String personId = req.getParameter("person_id") == null ? "" : req.getParameter("person_id");
+                String userFirstNameForAdd = req.getParameter("Firt_name") == null ? "" : req.getParameter("Firt_name");
+                String userSecondNameForAdd = req.getParameter("Second_name") == null ? "" : req.getParameter("Second_name");
+                String userLoginForAdd = req.getParameter("login") == null ? "" : req.getParameter("login");
+                String userPasswordForAdd = req.getParameter("password") == null ? "" : req.getParameter("password");
+                Person personForEdit = new Person(Integer.parseInt(personId),userFirstNameForAdd, userSecondNameForAdd, userLoginForAdd,userPasswordForAdd);
+                personsDAO.updatePerson(personForEdit);
+                pw.println("<p> Данные изменены.</p>");
+            }
+
             // Add new user button html
             pw.println(createHtmlForAddPersonButton());
 
@@ -150,7 +170,7 @@ public class ServletTest extends HttpServlet {
     private StringBuffer createHtmlTableOfPersonsList(List<Person> list) {
         StringBuffer personsHtmlTable = new StringBuffer("<br> <B> Список пользователей </B>" +
                 "<table border=5>" +
-                "<td><b>Имя<b></td> <td><b>Фамилия<b></td> <td><b>login<b></td> <td><b>password<b></td> <td><b>user_id<b></td> <td><b>Операция<b></td>" +
+                "<td><b>Имя<b></td> <td><b>Фамилия<b></td> <td><b>login<b></td> <td><b>password<b></td> <td><b>user_id<b></td> <td><b>Удалить<b></td> <td><b>Редактировать<b></td>" +
                 "<tr>");
 
         for (Person p : list) {
@@ -160,10 +180,12 @@ public class ServletTest extends HttpServlet {
                             "<td>" + p.getPersonLogin() + "</td>" +
                             "<td>" + p.getPersonPassword() + "</td>" +
                             "<td>" + p.getPersonId() + "</td>" +
-                            "<td><form action=\"test\" method=\"GET\"> <input type=\"hidden\" name=\"usr_id_for_del_by_btn\" value =\"" +
+                            "<td><form action=\"test\" method=\"GET\"> <input type=\"hidden\" name=\"user_id\" value =\"" +
                             +p.getPersonId() +
-                            "\"> <input type=\"submit\" name=\"submit\" value =\"удалить\" /> </form></td>" +
-
+                            "\"> <input type=\"submit\" name=\"action\" value =\"удалить\" /> </form></td>" +
+                            "<td><form action=\"test\" method=\"GET\"> <input type=\"hidden\" name=\"user_id\" value =\"" +
+                            +p.getPersonId() +
+                            "\"> <input type=\"submit\" name=\"action\" value =\"редактировать\" /> </form></td>" +
                             "</tr>");
         }
         personsHtmlTable.append("</table>");
@@ -176,30 +198,34 @@ public class ServletTest extends HttpServlet {
                 "Firt_name:___<input type=\"text\" name=\"Firt_name_add\" value=\"" + firstName + "\"> <br>" +
                 "Second_name:_<input type=\"text\" name=\"Second_name_add\" value=\"" + secondName + "\"> <br>" +
                 "Login:_______<input type=\"text\" name=\"login_for_add\" value=\"" + login + "\"> <br>" +
-                "<input type=\"submit\" name=\"Add_person_button_push\" value=\"Добавить\" /><br> </p>" +
+                "<input type=\"hidden\" name=\"action\" value =\"Add_new_Person\"/>" +
+                "<input type=\"submit\" value=\"Добавить\" /><br> </p>" +
                 "</form>" + createHtmlForMainMenuButton();
     }
 
     private String createHtmlForAddPersonButton() {
         return "<form action=\"test\" method=\"GET\">" +
-                "<input type=\"submit\" name=\"Add_new_user_menu\" value=\"Добавить нового пользователя\" /><br> </p>" +
+                "<input type=\"hidden\" name=\"action\" value =\"Go_to_add_Person_form\"/>" +
+                "<input type=\"submit\" value=\"Добавить нового пользователя\" /><br> </p>" +
                 "</form>";
     }
 
     private String createHtmlForMainMenuButton() {
         return "<form action=\"test\" method=\"GET\">" +
-                "<input type=\"submit\" name=\"Go_toMainList\" value = \"Вернуться к списку пользователей\" a href =\"test\" /><br> </p>" +
+                "<input type=\"hidden\" name=\"action\" value =\"Go_to_Persons_List\"/>" +
+                "<input type=\"submit\" value = \"Вернуться к списку пользователей\" a href =\"test\" /><br> </p>" +
                 "</form>";
     }
 
-    private String createHtmlForEditPerson() {
+    private String createHtmlForEditPerson( Person person) {
         return "<form action=\"test\" method=\"GET\">" +
-                "<p>Введите user_id пользователя, которого необходимо редактировать: <br> " +
-                "User_id: <input type=\"text\" name=\"user_id_for_edit\"> <br>" +
-                "Firt_name: <input type=\"text\" name=\"Firt_name_edit\"> <br>" +
-                "Second_name: <input type=\"text\" name=\"Second_name_edit\"> <br>" +
-                "Login: <input type=\"text\" name=\"login_for_edit\"> <br>" +
-                "<input type=\"submit\" value=\"Редактировать\" /><br> </p>" +
-                "</form>";
+                "User_id: <input type=\"hidden\" name=\"person_id\" value=\"" + person.getPersonId() + "\"> <br>" +
+                "Firt_name: <input type=\"text\" name=\"Firt_name\" value=\"" + person.getPersonNameFirst() + "\"> <br>" +
+                "Second_name: <input type=\"text\" name=\"Second_name\" value=\"" + person.getPersonNameSecond() + "\"> <br>" +
+                "Login: <input type=\"text\" name=\"login\" value=\"" + person.getPersonLogin() + "\"> <br>" +
+                "Password: <input type=\"text\" name=\"password\" value=\"" + person.getPersonPassword() + "\"> <br>" +
+                "<input type=\"hidden\" name=\"action\" value =\"Save_Edited_data\"/>" +
+                "<input type=\"submit\" value=\"Сохранить изменения\" /><br> </p>" +
+                "</form>" + createHtmlForMainMenuButton();
     }
 }

@@ -17,5 +17,7 @@ public interface PersonsDAO extends AutoCloseable {
     void close() throws DaoException;
 
     int countPersonsRecords (Integer Person_id) throws DaoException;
+
+    Person getPersonByPersonId (Integer person_id) throws DaoException;
 }
 //////////////////////////////////////////////
