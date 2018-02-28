@@ -5,14 +5,12 @@ import by.zinovich.javastudy.api.domain.Person;
 import by.zinovich.javastudy.exceptions.DaoException;
 import by.zinovich.javastudy.exceptions.MyServletException;
 import by.zinovich.javastudy.impl.dao.DaoFactoryImpl;
-import com.sun.javafx.iio.ios.IosDescriptor;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Properties;
 
@@ -43,13 +41,13 @@ public class ServletTest extends HttpServlet {
             // Delete button push handler
             if (action != null && action.equals("удалить")) {
                 deletePerson(personIdStr, personsDAO);
-                pw.println("<p> Пользователь с person_id = " + personIdStr + " удален.</p>");
+                pw.println(wrapIntoHtmlParagraph("Пользователь с person_id = " + personIdStr + " удален."));
             }
 
             // Add new user button push handler
             if (action != null && action.equals("Add_new_Person")) {
                 addPerson(personFirstName, personSecondName, personLogin, personsDAO);
-                pw.println("<p> Новый пользователь добавлен.</p>");
+                pw.println(wrapIntoHtmlParagraph("Новый пользователь добавлен."));
             }
 
             // Go to add new person button push handler
@@ -69,7 +67,7 @@ public class ServletTest extends HttpServlet {
             if (action != null && action.equals("Save_Edited_data")) {
                 Person personForEdit = new Person(Integer.parseInt(personIdStr), personFirstName, personSecondName, personLogin, personPassword);
                 personsDAO.updatePerson(personForEdit);
-                pw.println("<p> Данные изменены.</p>");
+                pw.println(wrapIntoHtmlParagraph("Данные изменены."));
             }
 
             // Add new user button html
@@ -78,13 +76,13 @@ public class ServletTest extends HttpServlet {
             /// Show all Persons
             pw.println(createHtmlTableOfPersonsList(personsDAO.getAllPersons()));
         } catch (MyServletException es) {
-            pw.println("<p>" + es.getMessage() + "</p>");
+            pw.println(wrapIntoHtmlParagraph( es.getMessage()));
             pw.println(createHtmlForMainMenuButton());
         } catch (DaoException ed) {
-            pw.println("<p>" + ed.getMessage() + "</p>");
+            pw.println(wrapIntoHtmlParagraph( ed.getMessage()));
             pw.println(createHtmlForMainMenuButton());
         } catch (Exception e) {
-            pw.println("<p> Произошла ошибка. Дополнительные сведения в log-файле.</p>");
+            pw.println(wrapIntoHtmlParagraph("Произошла ошибка. Дополнительные сведения в log-файле."));
             logError(e);
             pw.println(createHtmlForMainMenuButton());
         } finally {
@@ -92,6 +90,10 @@ public class ServletTest extends HttpServlet {
                 pw.close();
             }
         }
+    }
+
+    private String wrapIntoHtmlParagraph(String message) {
+        return "<p>" + message + "</p>";
     }
 
     private void deletePerson(String userStringId, PersonsDAO personsDAO) throws MyServletException {
