@@ -3,7 +3,6 @@ package by.zinovich.javastudy.web;
 import by.zinovich.javastudy.api.dao.PersonsDAO;
 import by.zinovich.javastudy.api.domain.Person;
 import by.zinovich.javastudy.exceptions.DaoException;
-import by.zinovich.javastudy.exceptions.MyServletException;
 import by.zinovich.javastudy.impl.dao.DaoFactoryImpl;
 
 import javax.servlet.ServletException;
@@ -15,6 +14,12 @@ import java.util.List;
 import java.util.Properties;
 
 public class ServletTest extends HttpServlet {
+    String action;
+    String personIdStr;
+    String personFirstName;
+    String personSecondName;
+    String personLogin;
+    String personPassword;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         doRequest(request, response);
@@ -31,18 +36,12 @@ public class ServletTest extends HttpServlet {
 
         /// MODEL ///
         try (PersonsDAO personsDAO = new DaoFactoryImpl().getPersonsDAO()) {
-            String action = req.getParameter("action");
-            String personIdStr = req.getParameter("person_id");
-            String personFirstName = req.getParameter("Firt_name") == null ? "" : req.getParameter("Firt_name");
-            String personSecondName = req.getParameter("Second_name") == null ? "" : req.getParameter("Second_name");
-            String personLogin = req.getParameter("login") == null ? "" : req.getParameter("login");
-            String personPassword = req.getParameter("password") == null ? "" : req.getParameter("password");
+
+            readParamsFromRequest(req);
 
             // Delete button push handler
             if (action != null && action.equals("удалить")) {
                 deletePerson(personIdStr, personsDAO, pw);
-                createButtonForAddPerson(pw);
-                createTableOfPersonsList(personsDAO, pw);
                 return;
             }
 
@@ -61,32 +60,18 @@ public class ServletTest extends HttpServlet {
 
             // Edit person button push handler
             if (action != null && action.equals("редактировать")) {
-                Integer usrIdForEdit = Integer.parseInt(personIdStr);
-                Person personForEdit = personsDAO.getPersonByPersonId(usrIdForEdit);
-                createFormForEditPerson(personForEdit, pw);
-                createButtonGoToPersonsListMenu(pw);
+                createEditPersonForm(personsDAO, pw);
                 return;
             }
 
             // Save edited person's data button push handler
             if (action != null && action.equals("Save_Edited_data")) {
-                Person personForEdit = new Person(Integer.parseInt(personIdStr), personFirstName, personSecondName, personLogin, personPassword);
-                personsDAO.updatePerson(personForEdit);
-                pw.println(wrapIntoHtmlParagraph("Данные изменены."));
-                createButtonForAddPerson(pw);
-                createTableOfPersonsList(personsDAO, pw);
+                saveEditedPersonData(personsDAO, pw);
                 return;
             }
 
             // Go to list of person button push handler
-            if (action != null && action.equals("Go_to_Persons_List")) {
-                createButtonForAddPerson(pw);
-                createTableOfPersonsList(personsDAO, pw);
-                return;
-            }
-
-            // default start page
-            if (action == null) {
+            if (action == null || action.equals("Go_to_Persons_List")) {
                 createButtonForAddPerson(pw);
                 createTableOfPersonsList(personsDAO, pw);
                 return;
@@ -106,6 +91,15 @@ public class ServletTest extends HttpServlet {
         }
     }
 
+    private void readParamsFromRequest(HttpServletRequest req) {
+        this.action = req.getParameter("action");
+        this.personIdStr = req.getParameter("person_id");
+        this.personFirstName = req.getParameter("Firt_name") == null ? "" : req.getParameter("Firt_name");
+        this.personSecondName = req.getParameter("Second_name") == null ? "" : req.getParameter("Second_name");
+        this.personLogin = req.getParameter("login") == null ? "" : req.getParameter("login");
+        this.personPassword = req.getParameter("password") == null ? "" : req.getParameter("password");
+    }
+
     private String wrapIntoHtmlParagraph(String message) {
         return "<p>" + message + "</p>";
     }
@@ -114,6 +108,23 @@ public class ServletTest extends HttpServlet {
         Integer userIdForDelete = Integer.parseInt(userStringId);
         personsDAO.deletePerson(userIdForDelete);
         pw.println(wrapIntoHtmlParagraph("Пользователь с person_id = " + userStringId + " удален."));
+        createButtonForAddPerson(pw);
+        createTableOfPersonsList(personsDAO, pw);
+    }
+
+    public void saveEditedPersonData(PersonsDAO personsDAO, PrintWriter pw) throws DaoException {
+        Person personForEdit = new Person(Integer.parseInt(personIdStr), personFirstName, personSecondName, personLogin, personPassword);
+        personsDAO.updatePerson(personForEdit);
+        pw.println(wrapIntoHtmlParagraph("Данные изменены."));
+        createButtonForAddPerson(pw);
+        createTableOfPersonsList(personsDAO, pw);
+    }
+
+    public void createEditPersonForm(PersonsDAO personsDAO, PrintWriter pw) throws DaoException {
+        Integer usrIdForEdit = Integer.parseInt(personIdStr);
+        Person personForEdit = personsDAO.getPersonByPersonId(usrIdForEdit);
+        createFormForEditPerson(personForEdit, pw);
+        createButtonGoToPersonsListMenu(pw);
     }
 
     private void addPerson(String userFirstNameForAdd, String userSecondNameForAdd, String userLoginForAdd, PersonsDAO personsDAO, PrintWriter pw) throws DaoException {
