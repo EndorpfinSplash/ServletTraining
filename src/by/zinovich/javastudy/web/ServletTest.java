@@ -78,10 +78,10 @@ public class ServletTest extends HttpServlet {
             }
 
         } catch (DaoException ed) {
-            pw.println(wrapIntoHtmlParagraph(ed.getMessage()));
+            createHtmlParagraphMsg(ed.getMessage(),pw);
             createButtonGoToPersonsListMenu(pw);
         } catch (Exception e) {
-            pw.println(wrapIntoHtmlParagraph("Произошла ошибка. Дополнительные сведения в log-файле."));
+            createHtmlParagraphMsg("Произошла ошибка. Дополнительные сведения в log-файле.",pw);
             logError(e);
             createButtonGoToPersonsListMenu(pw);
         } finally {
@@ -100,14 +100,14 @@ public class ServletTest extends HttpServlet {
         this.personPassword = req.getParameter("password") == null ? "" : req.getParameter("password");
     }
 
-    private String wrapIntoHtmlParagraph(String message) {
-        return "<p>" + message + "</p>";
+    private void createHtmlParagraphMsg(String message, PrintWriter pw) {
+        pw.println("<p>" + message + "</p>");
     }
 
     private void deletePerson(String userStringId, PersonsDAO personsDAO, PrintWriter pw) throws DaoException {
         Integer userIdForDelete = Integer.parseInt(userStringId);
         personsDAO.deletePerson(userIdForDelete);
-        pw.println(wrapIntoHtmlParagraph("Пользователь с person_id = " + userStringId + " удален."));
+       createHtmlParagraphMsg("Пользователь с person_id = " + userStringId + " удален.",pw);
         createButtonForAddPerson(pw);
         createTableOfPersonsList(personsDAO, pw);
     }
@@ -115,7 +115,7 @@ public class ServletTest extends HttpServlet {
     public void saveEditedPersonData(PersonsDAO personsDAO, PrintWriter pw) throws DaoException {
         Person personForEdit = new Person(Integer.parseInt(personIdStr), personFirstName, personSecondName, personLogin, personPassword);
         personsDAO.updatePerson(personForEdit);
-        pw.println(wrapIntoHtmlParagraph("Данные изменены."));
+        createHtmlParagraphMsg("Данные изменены.",pw);
         createButtonForAddPerson(pw);
         createTableOfPersonsList(personsDAO, pw);
     }
